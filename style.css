@@ -16,8 +16,11 @@
     --highlight-active: #C7D2FE;
     --highlight-related: #E2E8F0;
     --highlight-match: #A7F3D0;
-    --highlight-error: #FECACA;
-    --error-text: #EF4444;
+    --highlight-error: #FCA5A5;
+    /* Lighter red for light mode */
+    --highlight-error-related: #FCA5A5;
+    /* Lighter red for light mode */
+    --error-text: #DC2626;
 }
 
 body.dark-mode {
@@ -38,8 +41,11 @@ body.dark-mode {
     --highlight-active: #1E1B4B;
     --highlight-related: #0F172A;
     --highlight-match: #064E3B;
-    --highlight-error: #7F1D1D;
-    --error-text: #F87171;
+    --highlight-error: #B91C1C;
+    /* Bright dark-red for dark mode */
+    --highlight-error-related: #B91C1C;
+    /* Bright dark-red for dark mode */
+    --error-text: #FEF2F2;
 }
 
 * {
@@ -218,8 +224,25 @@ select option {
 }
 
 .cell.error-highlight {
-    background-color: var(--highlight-error);
-    color: var(--error-text);
+    background-color: var(--highlight-error) !important;
+    color: var(--error-text) !important;
+    font-weight: 800 !important;
+    animation: error-pulse 1.5s infinite alternate;
+}
+
+@keyframes error-pulse {
+    from {
+        background-color: var(--highlight-error);
+    }
+
+    to {
+        opacity: 0.8;
+    }
+}
+
+.cell.related-error {
+    background-color: var(--highlight-error-related) !important;
+    color: var(--error-text) !important;
 }
 
 /* 3x3 Box Highlight Overlay */
@@ -309,6 +332,11 @@ select option {
     color: var(--primary);
 }
 
+.btn.outline.active {
+    background-color: var(--primary);
+    color: white;
+}
+
 .numpad {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -337,6 +365,11 @@ select option {
 .num-btn:active {
     transform: scale(0.95);
     background-color: var(--highlight-related);
+}
+
+.num-btn.hidden {
+    visibility: hidden;
+    pointer-events: none;
 }
 
 @media (min-width: 600px) {

@@ -3,9 +3,12 @@ const selectAll = (s) => document.querySelectorAll(s);
 
 // State
 let solvedBoard = [];
-let initialPuzzle = [];
 let userBoard = [];
 let selectedCell = null; // {r, c}
+let moveHistory = [];
+let autoCandidatesEnabled = false;
+let lastModified = [];
+let moveCount = 0;
 
 let timerInterval = null;
 let secondsElapsed = 0;
@@ -28,6 +31,13 @@ function initGame() {
     resetTimer();
     startTimer();
     updateHighScoreDisplay();
+    moveHistory = [];
+    lastModified = Array(9).fill(null).map(() => Array(9).fill(0));
+    moveCount = 0;
+    autoCandidatesEnabled = false;
+    select('#btn-auto-candidates').classList.remove('active');
+    updateNumberPad();
+    checkDuplicates();
     select('#win-overlay').classList.add('hidden');
 }
 
@@ -134,7 +144,8 @@ function selectCell(r, c) {
 function updateHighlights() {
     const cells = selectAll('.cell');
     cells.forEach(cell => {
-        cell.classList.remove('active', 'related', 'match', 'error-highlight');
+        // Only clear active, related, and match. We leave the error classes (error-highlight, related-error) to persist.
+        cell.classList.remove('active', 'related', 'match');
     });
 
     const overlay = select('#box-highlight-overlay');
@@ -183,7 +194,10 @@ function updateHighlights() {
 
         // Match val
         if (selectedVal !== 0 && userBoard[cr][cc] === selectedVal && !(cr === r && cc === c)) {
-            cell.classList.add('match');
+            // Do not override user errors with generic match highlights
+            if (!cell.classList.contains('error-highlight') && !cell.classList.contains('related-error')) {
+                cell.classList.add('match');
+            }
         }
     });
 }
@@ -194,7 +208,12 @@ function setNumber(num) {
     const { r, c } = selectedCell;
     if (initialPuzzle[r][c] !== 0) return; // Fixed cell
 
+    if (userBoard[r][c] !== num) {
+        moveHistory.push({ r, c, prevVal: userBoard[r][c] });
+    }
+
     userBoard[r][c] = num;
+    lastModified[r][c] = ++moveCount;
     const cellEl = select(`.cell[data-r="${r}"][data-c="${c}"]`);
 
     // Auto Candidates overwrite clear if any
@@ -205,7 +224,13 @@ function setNumber(num) {
         cellEl.classList.remove('user-input');
     }
 
+    if (autoCandidatesEnabled) {
+        refreshAllCandidates();
+    }
+
     updateHighlights();
+    checkDuplicates();
+    updateNumberPad();
     checkWinCondition();
 }
 
@@ -213,14 +238,120 @@ function clearCell() {
     setNumber(0);
 }
 
+function undoMove() {
+    if (moveHistory.length === 0) return;
+    const lastMove = moveHistory.pop();
+    const { r, c, prevVal } = lastMove;
+
+    userBoard[r][c] = prevVal;
+    const cellEl = select(`.cell[data-r="${r}"][data-c="${c}"]`);
+
+    cellEl.innerHTML = prevVal === 0 ? '' : prevVal;
+    if (prevVal !== 0) {
+        cellEl.classList.add('user-input');
+    } else {
+        cellEl.classList.remove('user-input');
+    }
+
+    if (autoCandidatesEnabled) {
+        refreshAllCandidates();
+    }
+
+    // Select the cell that was undone
+    selectCell(r, c);
+    checkDuplicates();
+    updateNumberPad();
+}
+
+function checkDuplicates() {
+    const cells = selectAll('.cell');
+    // We only remove error-highlight if it's currently used for duplicates. Check puzzle also uses it.
+    cells.forEach(cell => cell.classList.remove('error-highlight', 'related-error'));
+
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            const val = userBoard[r][c];
+            if (val === 0) continue;
+
+            let conflicts = [];
+
+            // Check row and column
+            for (let i = 0; i < 9; i++) {
+                if (i !== c && userBoard[r][i] === val) conflicts.push({ r: r, c: i });
+                if (i !== r && userBoard[i][c] === val) conflicts.push({ r: i, c: c });
+            }
+            // Check 3x3 box
+            const startR = Math.floor(r / 3) * 3;
+            const startC = Math.floor(c / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if ((startR + i !== r || startC + j !== c) && userBoard[startR + i][startC + j] === val) {
+                        conflicts.push({ r: startR + i, c: startC + j });
+                    }
+                }
+            }
+
+            if (conflicts.length > 0) {
+                let isNewestDup = true;
+                for (let conf of conflicts) {
+                    if (lastModified[conf.r][conf.c] > lastModified[r][c]) {
+                        isNewestDup = false;
+                    }
+                }
+                const classToAdd = isNewestDup ? 'error-highlight' : 'related-error';
+                select(`.cell[data-r="${r}"][data-c="${c}"]`).classList.add(classToAdd);
+            }
+        }
+    }
+}
+
+function updateNumberPad() {
+    for (let num = 1; num <= 9; num++) {
+        let count = 0;
+        let allCorrect = true;
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (userBoard[r][c] === num) {
+                    count++;
+                    if (solvedBoard[r][c] !== num) {
+                        allCorrect = false;
+                    }
+                }
+            }
+        }
+
+        const btn = select(`.num-btn[data-val="${num}"]`);
+        if (btn) {
+            if (count === 9 && allCorrect) {
+                btn.classList.add('hidden');
+            } else {
+                btn.classList.remove('hidden');
+            }
+        }
+    }
+}
+
 // Candidates
-function autoCandidates() {
+function toggleAutoCandidates() {
+    autoCandidatesEnabled = !autoCandidatesEnabled;
+    const btn = select('#btn-auto-candidates');
+    if (autoCandidatesEnabled) {
+        btn.classList.add('active');
+        refreshAllCandidates();
+    } else {
+        btn.classList.remove('active');
+        clearAllCandidates();
+    }
+}
+
+function refreshAllCandidates() {
     const cells = selectAll('.cell');
     for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
             if (userBoard[r][c] === 0) {
                 const possible = [];
                 for (let num = 1; num <= 9; num++) {
+                    // Only add candidate if placing it wouldn't create a duplication rule break
                     if (isValid(userBoard, r, c, num)) {
                         possible.push(num);
                     }
@@ -229,6 +360,17 @@ function autoCandidates() {
                 cellEl.innerHTML = `<div class="candidates">
                     ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<div class="candidate">${possible.includes(n) ? n : ''}</div>`).join('')}
                 </div>`;
+            }
+        }
+    }
+}
+
+function clearAllCandidates() {
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            if (userBoard[r][c] === 0) {
+                const cellEl = select(`.cell[data-r="${r}"][data-c="${c}"]`);
+                cellEl.innerHTML = '';
             }
         }
     }
@@ -331,7 +473,8 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', () => {
     select('#btn-new-game').addEventListener('click', initGame);
     select('#btn-check').addEventListener('click', checkPuzzle);
-    select('#btn-auto-candidates').addEventListener('click', autoCandidates);
+    select('#btn-undo').addEventListener('click', undoMove);
+    select('#btn-auto-candidates').addEventListener('click', toggleAutoCandidates);
     select('#btn-clear').addEventListener('click', clearCell);
     select('#theme-toggle').addEventListener('click', toggleTheme);
     select('#overlay-new-game').addEventListener('click', initGame);
@@ -347,6 +490,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('keydown', (e) => {
+        // Handle Undo (Ctrl+Z or Cmd+Z)
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            undoMove();
+            return;
+        }
+
         if (e.key >= '1' && e.key <= '9') {
             setNumber(parseInt(e.key));
         } else if (e.key === 'Backspace' || e.key === 'Delete') {
