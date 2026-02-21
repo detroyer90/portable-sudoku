@@ -1,0 +1,403 @@
+:root {
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
+    --bg: #F9FAFB;
+    --surface: #FFFFFF;
+    --text: #111827;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+
+    --cell-bg: #FFFFFF;
+    --cell-border: #D1D5DB;
+    --cell-border-thick: #374151;
+    --cell-text-fixed: #111827;
+    --cell-text-user: #4F46E5;
+
+    --highlight-active: #C7D2FE;
+    --highlight-related: #E2E8F0;
+    --highlight-match: #A7F3D0;
+    --highlight-error: #FECACA;
+    --error-text: #EF4444;
+}
+
+body.dark-mode {
+    --primary: #6366F1;
+    --primary-hover: #818CF8;
+    --bg: #0F172A;
+    --surface: #1E293B;
+    --text: #F8FAFC;
+    --text-muted: #94A3B8;
+    --border: #334155;
+
+    --cell-bg: #1E293B;
+    --cell-border: #334155;
+    --cell-border-thick: #94A3B8;
+    --cell-text-fixed: #F8FAFC;
+    --cell-text-user: #E0E7FF;
+
+    --highlight-active: #1E1B4B;
+    --highlight-related: #0F172A;
+    --highlight-match: #064E3B;
+    --highlight-error: #7F1D1D;
+    --error-text: #F87171;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 0.3s, color 0.3s;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1rem;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.icon-btn:hover {
+    background-color: var(--surface);
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface);
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+select {
+    appearance: none;
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-family: inherit;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+select:focus {
+    border-color: var(--primary);
+}
+
+select option {
+    background: var(--surface);
+}
+
+.timer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-variant-numeric: tabular-nums;
+}
+
+.time {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.best-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.board-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.sudoku-board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    width: 100%;
+    height: 100%;
+    background-color: var(--cell-border-thick);
+    gap: 1px;
+    border: 2px solid var(--cell-border-thick);
+}
+
+.cell {
+    background-color: var(--cell-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1rem, 5vw, 1.75rem);
+    font-weight: 600;
+    color: var(--cell-text-fixed);
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: background-color 0.2s, color 0.1s;
+}
+
+/* Thicker borders for 3x3 grids */
+.cell:nth-child(3n) {
+    border-right: 2px solid var(--cell-border-thick);
+}
+
+.cell:nth-child(9n) {
+    border-right: none;
+}
+
+.cell:nth-child(n+19):nth-child(-n+27),
+.cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom: 2px solid var(--cell-border-thick);
+}
+
+/* Cell States */
+.cell.user-input {
+    color: var(--cell-text-user);
+    font-weight: 400;
+}
+
+.cell.active {
+    background-color: var(--highlight-active) !important;
+}
+
+.cell.related {
+    background-color: var(--highlight-related);
+}
+
+.cell.match {
+    background-color: var(--highlight-match);
+}
+
+.cell.error-highlight {
+    background-color: var(--highlight-error);
+    color: var(--error-text);
+}
+
+/* 3x3 Box Highlight Overlay */
+.box-highlight-overlay {
+    position: absolute;
+    border: 3px solid var(--primary);
+    pointer-events: none;
+    z-index: 5;
+    transition: top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
+    border-radius: 4px;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+}
+
+.box-highlight-overlay.hidden {
+    display: none;
+}
+
+/* Candidates styling */
+.candidates {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 100%;
+    height: 100%;
+    padding: 2px;
+}
+
+.candidate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(0.4rem, 1.5vw, 0.6rem);
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.controls-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.main-actions,
+.sub-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn.primary {
+    background-color: var(--primary);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);
+}
+
+.btn.primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn.secondary {
+    background-color: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn.outline {
+    background-color: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+}
+
+.numpad {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.numpad .num-btn:last-child {
+    grid-column: span 1;
+}
+
+.num-btn {
+    background-color: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    height: 3.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.1s;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+}
+
+.num-btn:active {
+    transform: scale(0.95);
+    background-color: var(--highlight-related);
+}
+
+@media (min-width: 600px) {
+    .numpad {
+        grid-template-columns: repeat(9, 1fr);
+    }
+}
+
+.win-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 10;
+    border-radius: 0.5rem;
+}
+
+.win-overlay.hidden {
+    display: none;
+}
+
+.win-overlay h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #34d399, #10b981);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.win-overlay p {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+#new-record-msg {
+    color: #fcd34d;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from {
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(1.05);
+    }
+}
+
+/* Prevent text selection on entire app */
+.app-container {
+    user-select: none;
+}

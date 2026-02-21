@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portable Sudoku</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="dark-mode">
+    <div class="app-container">
+        <header>
+            <h1>Sudoku</h1>
+            <div class="header-controls">
+                <button id="theme-toggle" class="icon-btn" aria-label="Toggle Theme">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round" class="moon-icon">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="game-info">
+            <div class="difficulty-selector">
+                <select id="difficulty-select">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="timer-container">
+                <div class="time">⏱️ <span id="timer">00:00</span></div>
+                <div class="best-time">Best: <span id="high-score">--:--</span></div>
+            </div>
+        </div>
+
+        <main class="board-container">
+            <div id="sudoku-board" class="sudoku-board"></div>
+            <div id="box-highlight-overlay" class="box-highlight-overlay hidden"></div>
+            <div class="win-overlay hidden" id="win-overlay">
+                <h2>Puzzle Solved!</h2>
+                <p>Time: <span id="final-time"></span></p>
+                <div id="new-record-msg" class="hidden">New Best Time! 🎉</div>
+                <button id="overlay-new-game" class="btn primary">Play Again</button>
+            </div>
+        </main>
+
+        <div class="controls-panel">
+            <div class="main-actions">
+                <button id="btn-new-game" class="btn primary">New Game</button>
+                <button id="btn-check" class="btn secondary">Check Puzzle</button>
+            </div>
+            <div class="sub-actions">
+                <button id="btn-auto-candidates" class="btn outline">Auto Candidates</button>
+                <button id="btn-clear" class="btn outline">Clear Cell</button>
+            </div>
+        </div>
+
+        <div class="numpad" id="numpad">
+            <button class="num-btn" data-val="1">1</button>
+            <button class="num-btn" data-val="2">2</button>
+            <button class="num-btn" data-val="3">3</button>
+            <button class="num-btn" data-val="4">4</button>
+            <button class="num-btn" data-val="5">5</button>
+            <button class="num-btn" data-val="6">6</button>
+            <button class="num-btn" data-val="7">7</button>
+            <button class="num-btn" data-val="8">8</button>
+            <button class="num-btn" data-val="9">9</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.log('SW registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
