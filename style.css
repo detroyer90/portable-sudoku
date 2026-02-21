@@ -306,6 +306,14 @@ select option {
     align-items: center;
 }
 
+.btn:disabled,
+.num-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed !important;
+    pointer-events: none;
+    transform: none !important;
+}
+
 .btn:active {
     transform: scale(0.98);
 }
@@ -418,6 +426,15 @@ select option {
     font-weight: 600;
     margin-bottom: 1.5rem;
     animation: pulse 1s infinite alternate;
+}
+
+#overlay-new-game {
+    flex: none;
+    margin-top: 1rem;
+    padding: 0.75rem 2.5rem;
+    font-size: 1.1rem;
+    border-radius: 9999px;
+    /* Pill shape */
 }
 
 @keyframes pulse {

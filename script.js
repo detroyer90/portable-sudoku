@@ -9,6 +9,7 @@ let moveHistory = [];
 let autoCandidatesEnabled = false;
 let lastModified = [];
 let moveCount = 0;
+let isGameWon = false;
 
 let timerInterval = null;
 let secondsElapsed = 0;
@@ -34,8 +35,13 @@ function initGame() {
     moveHistory = [];
     lastModified = Array(9).fill(null).map(() => Array(9).fill(0));
     moveCount = 0;
+    isGameWon = false;
     autoCandidatesEnabled = false;
     select('#btn-auto-candidates').classList.remove('active');
+
+    ['#btn-check', '#btn-undo', '#btn-auto-candidates', '#btn-clear'].forEach(id => select(id).disabled = false);
+    selectAll('.num-btn').forEach(btn => btn.disabled = false);
+
     updateNumberPad();
     checkDuplicates();
     select('#win-overlay').classList.add('hidden');
@@ -88,17 +94,56 @@ function isValid(board, r, c, num) {
 }
 
 function removeCells(board, count) {
-    let attempts = count;
-    while (attempts > 0) {
-        let r = Math.floor(Math.random() * 9);
-        let c = Math.floor(Math.random() * 9);
-        while (board[r][c] === 0) {
-            r = Math.floor(Math.random() * 9);
-            c = Math.floor(Math.random() * 9);
-        }
-        board[r][c] = 0;
-        attempts--;
+    let positions = [];
+    for (let i = 0; i < 81; i++) {
+        positions.push(i);
     }
+    shuffle(positions);
+
+    let removed = 0;
+    for (let i = 0; i < positions.length; i++) {
+        if (removed >= count) break;
+
+        const r = Math.floor(positions[i] / 9);
+        const c = positions[i] % 9;
+
+        if (board[r][c] !== 0) {
+            const backup = board[r][c];
+            board[r][c] = 0;
+
+            if (countSolutions(board) !== 1) {
+                board[r][c] = backup;
+            } else {
+                removed++;
+            }
+        }
+    }
+}
+
+function countSolutions(board) {
+    let solutions = 0;
+
+    function solve() {
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (board[r][c] === 0) {
+                    for (let num = 1; num <= 9; num++) {
+                        if (isValid(board, r, c, num)) {
+                            board[r][c] = num;
+                            solve();
+                            board[r][c] = 0;
+                            if (solutions > 1) return;
+                        }
+                    }
+                    return; // Return back up the tree if no numbers work
+                }
+            }
+        }
+        solutions++;
+    }
+
+    solve();
+    return solutions;
 }
 
 function shuffle(array) {
@@ -204,6 +249,7 @@ function updateHighlights() {
 
 // Interactions
 function setNumber(num) {
+    if (isGameWon) return;
     if (!selectedCell) return;
     const { r, c } = selectedCell;
     if (initialPuzzle[r][c] !== 0) return; // Fixed cell
@@ -239,6 +285,7 @@ function clearCell() {
 }
 
 function undoMove() {
+    if (isGameWon) return;
     if (moveHistory.length === 0) return;
     const lastMove = moveHistory.pop();
     const { r, c, prevVal } = lastMove;
@@ -407,6 +454,7 @@ function checkWinCondition() {
 }
 
 function winGame() {
+    isGameWon = true;
     stopTimer();
     const timeStr = formatTime(secondsElapsed);
     select('#final-time').textContent = timeStr;
@@ -424,7 +472,10 @@ function winGame() {
 
     select('#win-overlay').classList.remove('hidden');
     updateHighScoreDisplay();
-}
+
+    ['#btn-check', '#btn-undo', '#btn-auto-candidates', '#btn-clear'].forEach(id => select(id).disabled = true);
+    selectAll('.num-btn').forEach(btn => btn.disabled = true);
+} // End winGame
 
 // Timer
 function startTimer() {
